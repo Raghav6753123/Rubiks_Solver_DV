@@ -58,3 +58,12 @@ frontend/build/
 # Temporary files
 *.tmp
 /tmp/
+
+# Debug and test files
+backend/debug_move
+backend/debug_move.cpp
+backend/test_moves
+backend/test_moves.cpp
+backend/test_scrambles.txt
+backend/solver
+backend/pdb/
