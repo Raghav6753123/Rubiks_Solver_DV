@@ -40,8 +40,8 @@ int cornerFacelet[8][3] = {
 
 int edgeFacelet[12][2] = {
     {5, 10}, {7, 19}, {3, 37}, {1, 46},
-    {32, 14}, {28, 25}, {30, 43}, {34, 52},
-    {23, 12}, {21, 41}, {50, 39}, {48, 16}
+    {32, 16}, {28, 25}, {30, 43}, {34, 52},
+    {23, 12}, {21, 41}, {50, 39}, {48, 14}
 };
 
 char cornerColor[8][3] = {
@@ -535,6 +535,20 @@ bool solve_p2(CubeState s, int g, int threshold, vector<Move>& path, Move lastMo
 }
 
 // =================================================================================================
+// --- SOLVED STATE CHECK ---
+// =================================================================================================
+
+bool is_solved(const CubeState &s) {
+    for (int i = 0; i < 8; i++) {
+        if (s.cp[i] != i || s.co[i] != 0) return false;
+    }
+    for (int i = 0; i < 12; i++) {
+        if (s.ep[i] != i || s.eo[i] != 0) return false;
+    }
+    return true;
+}
+
+// =================================================================================================
 // --- PARSING ---
 // =================================================================================================
 
@@ -636,6 +650,11 @@ string solve(const string& facelet_string) {
     
     if (!validate_cube(start_state)) {
         return "ERROR: Impossible cube state";
+    }
+
+    // Check if already solved
+    if (is_solved(start_state)) {
+        return "";  // Empty solution for solved cube
     }
 
     vector<Move> p1_sol;
