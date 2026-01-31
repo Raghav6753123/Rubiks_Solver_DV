@@ -1,35 +1,37 @@
-import { useCubeStore, Color } from '../store/cubeStore';
-import { COLOR_MAP, COLOR_NAMES } from '../utils/cubeUtils';
+import React from 'react';
+import { useCubeStore, FACE_COLORS } from '../store/cubeStore';
 
-const COLORS: Color[] = ['U', 'R', 'F', 'D', 'L', 'B'];
-
-export default function ColorPicker() {
+export const ColorPicker: React.FC = () => {
   const { selectedColor, setSelectedColor } = useCubeStore();
-
+  
+  const colors = Object.entries(FACE_COLORS);
+  
   return (
-    <div className="color-picker">
-      <h3>Color Picker</h3>
-      <div className="color-grid">
-        {COLORS.map((color) => (
-          <button
-            key={color}
-            className={`color-button ${selectedColor === color ? 'selected' : ''}`}
-            style={{ backgroundColor: COLOR_MAP[color] }}
-            onClick={() => setSelectedColor(color)}
-            title={COLOR_NAMES[color]}
-          >
-            {selectedColor === color && <span className="checkmark">✓</span>}
-          </button>
-        ))}
-      </div>
-      <div className="color-legend">
-        {COLORS.map((color) => (
-          <div key={color} className="legend-item">
-            <span className="legend-color" style={{ backgroundColor: COLOR_MAP[color] }}></span>
-            <span className="legend-text">{color} = {COLOR_NAMES[color]}</span>
-          </div>
-        ))}
-      </div>
+    <div style={{
+      display: 'flex',
+      gap: '8px',
+      padding: '16px',
+      backgroundColor: '#f5f5f5',
+      borderRadius: '8px',
+      marginBottom: '16px',
+    }}>
+      <div style={{ fontWeight: 'bold', marginRight: '8px' }}>Color:</div>
+      {colors.map(([face, color]) => (
+        <button
+          key={face}
+          onClick={() => setSelectedColor(face)}
+          style={{
+            width: '40px',
+            height: '40px',
+            backgroundColor: color,
+            border: selectedColor === face ? '3px solid #000' : '1px solid #999',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            boxShadow: selectedColor === face ? '0 2px 4px rgba(0,0,0,0.3)' : 'none',
+          }}
+          title={face}
+        />
+      ))}
     </div>
   );
-}
+};
