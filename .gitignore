@@ -24,8 +24,10 @@ solver
 
 # Test files
 backend/solver_test
-backend/apply_r
+backend/apply_r*
 backend/test_*
+backend/generate_*
+backend/verify_*
 backend/*.txt
 
 # Pattern Databases
