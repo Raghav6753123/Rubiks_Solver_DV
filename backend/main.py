@@ -4,6 +4,7 @@ from pydantic import BaseModel
 import subprocess
 import os
 import sys
+import kociemba
 
 app = FastAPI(title="Rubik's Cube Solver API")
 
@@ -25,48 +26,12 @@ class SolveResponse(BaseModel):
     success: bool = False
     error: str = ""
 
-# Build solver executable on startup
-def build_solver():
-    backend_dir = os.path.dirname(os.path.abspath(__file__))
-    solver_path = os.path.join(backend_dir, "solver")
-    cpp_path = os.path.join(backend_dir, "solver.cpp")
-    
-    # Check if solver exists and is up to date
-    if os.path.exists(solver_path):
-        return solver_path
-    
-    # Compile solver
-    print("Compiling solver...")
-    try:
-        result = subprocess.run(
-            ["g++", "-O3", "-std=c++17", "-o", solver_path, cpp_path],
-            capture_output=True,
-            text=True,
-            check=True
-        )
-        print("Solver compiled successfully")
-        return solver_path
-    except subprocess.CalledProcessError as e:
-        print(f"Failed to compile solver: {e.stderr}")
-        raise
-
-SOLVER_PATH = None
-
-@app.on_event("startup")
-async def startup_event():
-    global SOLVER_PATH
-    SOLVER_PATH = build_solver()
-    print(f"Solver ready at: {SOLVER_PATH}")
-
 @app.get("/api/health")
 async def health_check():
-    return {"status": "healthy", "solver_available": SOLVER_PATH is not None}
+    return {"status": "healthy", "solver": "kociemba-python"}
 
 @app.post("/api/solve", response_model=SolveResponse)
 async def solve_cube(request: SolveRequest):
-    if not SOLVER_PATH:
-        raise HTTPException(status_code=500, detail="Solver not initialized")
-    
     facelets = request.facelets.strip()
     
     # Validate input
@@ -95,46 +60,31 @@ async def solve_cube(request: SolveRequest):
             error="Invalid input: each color must appear exactly 9 times"
         )
     
-    # Call C++ solver
+    # Use kociemba library to solve
     try:
-        result = subprocess.run(
-            [SOLVER_PATH],
-            input=facelets + "\n",
-            capture_output=True,
-            text=True,
-            timeout=30
+        # kociemba.solve() returns solution string or raises ValueError for invalid cubes
+        solution = kociemba.solve(facelets)
+        
+        # Handle the known issue where kociemba returns garbage for solved cube
+        # Check if already solved by trying to parse as moves
+        is_already_solved = facelets == "UUUUUUUUURRRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBB"
+        if is_already_solved:
+            solution = ""
+        
+        # Count moves
+        moves = solution.split() if solution else []
+        
+        return SolveResponse(
+            solution=solution,
+            move_count=len(moves),
+            success=True
         )
-        
-        output = result.stdout.strip()
-        
-        # Parse output
-        if "Result:" in output:
-            solution = output.split("Result:")[1].strip()
             
-            if solution.startswith("ERROR:"):
-                return SolveResponse(
-                    success=False,
-                    error=solution
-                )
-            
-            # Count moves
-            moves = solution.split() if solution else []
-            
-            return SolveResponse(
-                solution=solution,
-                move_count=len(moves),
-                success=True
-            )
-        else:
-            return SolveResponse(
-                success=False,
-                error="Unexpected solver output"
-            )
-            
-    except subprocess.TimeoutExpired:
+    except ValueError as e:
+        # kociemba raises ValueError for impossible cube states
         return SolveResponse(
             success=False,
-            error="Solver timeout (>30 seconds)"
+            error="Invalid cube: impossible configuration (check corner/edge parity)"
         )
     except Exception as e:
         return SolveResponse(
