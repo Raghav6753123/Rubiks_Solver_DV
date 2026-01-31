@@ -17,6 +17,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Constants
+SOLVED_CUBE = "UUUUUUUUURRRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBB"
+
 class SolveRequest(BaseModel):
     facelets: str
 
@@ -65,9 +68,9 @@ async def solve_cube(request: SolveRequest):
         # kociemba.solve() returns solution string or raises ValueError for invalid cubes
         solution = kociemba.solve(facelets)
         
-        # Handle the known issue where kociemba returns garbage for solved cube
-        # Check if already solved by trying to parse as moves
-        is_already_solved = facelets == "UUUUUUUUURRRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBB"
+        # kociemba library may return a non-empty solution for already-solved cubes
+        # We explicitly check and return empty string for the solved state
+        is_already_solved = facelets == SOLVED_CUBE
         if is_already_solved:
             solution = ""
         
