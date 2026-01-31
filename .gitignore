@@ -25,6 +25,7 @@ solver
 # Test files
 backend/solver_test
 backend/apply_r
+backend/test_*
 backend/*.txt
 
 # Pattern Databases
