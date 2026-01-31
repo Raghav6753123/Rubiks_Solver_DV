@@ -68,7 +68,7 @@ char cornerColor[8][3] = {
     {'U', 'L', 'B'}, // ULB
     {'U', 'B', 'R'}, // UBR
     {'D', 'F', 'R'}, // DFR
-    {'D', 'L', 'F'}, // DLF
+    {'D', 'F', 'L'}, // DLF - Fixed: was {'D', 'L', 'F'}
     {'D', 'B', 'L'}, // DBL
     {'D', 'R', 'B'}  // DRB
 };
