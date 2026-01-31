@@ -33,26 +33,60 @@ string move_strings[18] = {
 enum Corner { URF, UFL, ULB, UBR, DFR, DLF, DBL, DRB };
 enum Edge { UR, UF, UL, UB, DR, DF, DL, DB, FR, FL, BL, BR };
 
+// Facelet indices for each corner (position -> facelets)
 int cornerFacelet[8][3] = {
-    {8, 9, 20},   {6, 18, 38}, {0, 36, 47}, {2, 45, 11},
-    {29, 26, 15}, {27, 44, 24}, {33, 53, 42}, {35, 17, 51}
+    {8, 9, 20},   // URF: U8, R9, F20
+    {6, 18, 38},  // UFL: U6, F18, L38
+    {0, 36, 47},  // ULB: U0, L36, B47
+    {2, 45, 11},  // UBR: U2, B45, R11
+    {29, 26, 15}, // DFR: D29, F26, R15
+    {27, 44, 24}, // DLF: D27, L44, F24
+    {33, 53, 42}, // DBL: D33, B53, L42
+    {35, 17, 51}  // DRB: D35, R17, B51
 };
 
+// Facelet indices for each edge (position -> facelets)
 int edgeFacelet[12][2] = {
-    {5, 10}, {7, 19}, {3, 37}, {1, 46},
-    {32, 16}, {28, 25}, {30, 43}, {34, 52},
-    {23, 12}, {21, 41}, {50, 39}, {48, 14}
+    {5, 10},  // UR: U5, R10
+    {7, 19},  // UF: U7, F19
+    {3, 37},  // UL: U3, L37
+    {1, 46},  // UB: U1, B46
+    {32, 16}, // DR: D32, R16
+    {28, 25}, // DF: D28, F25
+    {30, 43}, // DL: D30, L43
+    {34, 52}, // DB: D34, B52
+    {23, 12}, // FR: F23, R12
+    {21, 41}, // FL: F21, L41
+    {50, 39}, // BL: B50, L39
+    {48, 14}  // BR: B48, R14
 };
 
+// Color of each corner piece in solved state
 char cornerColor[8][3] = {
-    {'U', 'R', 'F'}, {'U', 'F', 'L'}, {'U', 'L', 'B'}, {'U', 'B', 'R'},
-    {'D', 'F', 'R'}, {'D', 'L', 'F'}, {'D', 'B', 'L'}, {'D', 'R', 'B'}
+    {'U', 'R', 'F'}, // URF
+    {'U', 'F', 'L'}, // UFL
+    {'U', 'L', 'B'}, // ULB
+    {'U', 'B', 'R'}, // UBR
+    {'D', 'F', 'R'}, // DFR
+    {'D', 'L', 'F'}, // DLF
+    {'D', 'B', 'L'}, // DBL
+    {'D', 'R', 'B'}  // DRB
 };
 
+// Color of each edge piece in solved state
 char edgeColor[12][2] = {
-    {'U', 'R'}, {'U', 'F'}, {'U', 'L'}, {'U', 'B'},
-    {'D', 'R'}, {'D', 'F'}, {'D', 'L'}, {'D', 'B'},
-    {'F', 'R'}, {'F', 'L'}, {'B', 'L'}, {'B', 'R'}
+    {'U', 'R'}, // UR
+    {'U', 'F'}, // UF
+    {'U', 'L'}, // UL
+    {'U', 'B'}, // UB
+    {'D', 'R'}, // DR
+    {'D', 'F'}, // DF
+    {'D', 'L'}, // DL
+    {'D', 'B'}, // DB
+    {'F', 'R'}, // FR
+    {'F', 'L'}, // FL
+    {'B', 'L'}, // BL
+    {'B', 'R'}  // BR
 };
 
 // =================================================================================================
@@ -60,10 +94,10 @@ char edgeColor[12][2] = {
 // =================================================================================================
 
 struct CubeState {
-    int cp[8];
-    int co[8];
-    int ep[12];
-    int eo[12];
+    int cp[8];  // Corner permutation
+    int co[8];  // Corner orientation
+    int ep[12]; // Edge permutation
+    int eo[12]; // Edge orientation
 
     CubeState() {
         for (int i = 0; i < 8; i++) { cp[i] = i; co[i] = 0; }
@@ -78,17 +112,8 @@ struct CubeState {
 };
 
 // =================================================================================================
-// --- MOVE LOGIC (FIXED) ---
+// --- MOVE LOGIC ---
 // =================================================================================================
-
-// FIXED: Clockwise cycle direction
-void cycle4(int* arr, int i1, int i2, int i3, int i4) {
-    int temp = arr[i1];
-    arr[i1] = arr[i4];
-    arr[i4] = arr[i3];
-    arr[i3] = arr[i2];
-    arr[i2] = temp;
-}
 
 CubeState applyMove(const CubeState &s, Move m) {
     CubeState n = s;
@@ -96,84 +121,79 @@ CubeState applyMove(const CubeState &s, Move m) {
     int power = (m % 3) + 1;
 
     for (int k = 0; k < power; k++) {
+        CubeState temp = n;
+        
         switch (axis) {
-        case 0: // U - Corners: URF -> UBR -> ULB -> UFL -> URF
-            cycle4(n.cp, URF, UBR, ULB, UFL);
-            cycle4(n.co, URF, UBR, ULB, UFL);
-            // Edges: UR -> UB -> UL -> UF -> UR
-            cycle4(n.ep, UR, UB, UL, UF);
-            cycle4(n.eo, UR, UB, UL, UF);
+        case 0: // U - URF→UBR→ULB→UFL→URF, UR→UB→UL→UF→UR
+            n.cp[UBR] = temp.cp[URF]; n.co[UBR] = temp.co[URF];
+            n.cp[ULB] = temp.cp[UBR]; n.co[ULB] = temp.co[UBR];
+            n.cp[UFL] = temp.cp[ULB]; n.co[UFL] = temp.co[ULB];
+            n.cp[URF] = temp.cp[UFL]; n.co[URF] = temp.co[UFL];
+            
+            n.ep[UB] = temp.ep[UR]; n.eo[UB] = temp.eo[UR];
+            n.ep[UL] = temp.ep[UB]; n.eo[UL] = temp.eo[UB];
+            n.ep[UF] = temp.ep[UL]; n.eo[UF] = temp.eo[UL];
+            n.ep[UR] = temp.ep[UF]; n.eo[UR] = temp.eo[UF];
             break;
-        case 1: // D - Corners: DFR -> DLF -> DBL -> DRB -> DFR
-            cycle4(n.cp, DFR, DLF, DBL, DRB);
-            cycle4(n.co, DFR, DLF, DBL, DRB);
-            // Edges: DR -> DF -> DL -> DB -> DR
-            cycle4(n.ep, DR, DF, DL, DB);
-            cycle4(n.eo, DR, DF, DL, DB);
+
+        case 1: // D - DFR→DLF→DBL→DRB→DFR, DF→DL→DB→DR→DF
+            n.cp[DLF] = temp.cp[DFR]; n.co[DLF] = temp.co[DFR];
+            n.cp[DBL] = temp.cp[DLF]; n.co[DBL] = temp.co[DLF];
+            n.cp[DRB] = temp.cp[DBL]; n.co[DRB] = temp.co[DBL];
+            n.cp[DFR] = temp.cp[DRB]; n.co[DFR] = temp.co[DRB];
+            
+            n.ep[DL] = temp.ep[DF]; n.eo[DL] = temp.eo[DF];
+            n.ep[DB] = temp.ep[DL]; n.eo[DB] = temp.eo[DL];
+            n.ep[DR] = temp.ep[DB]; n.eo[DR] = temp.eo[DB];
+            n.ep[DF] = temp.ep[DR]; n.eo[DF] = temp.eo[DR];
             break;
-        case 2: // L - Corners: UFL <- DLF <- DBL <- ULB <- UFL
-            cycle4(n.cp, UFL, ULB, DBL, DLF);
-            {
-                int tco = n.co[UFL];
-                n.co[UFL] = (n.co[DLF] + 1) % 3;
-                n.co[DLF] = (n.co[DBL] + 2) % 3;
-                n.co[DBL] = (n.co[ULB] + 1) % 3;
-                n.co[ULB] = (tco + 2) % 3;
-            }
-            // Edges: UL <- FL <- DL <- BL <- UL
-            cycle4(n.ep, UL, BL, DL, FL);
-            cycle4(n.eo, UL, BL, DL, FL);
+
+        case 2: // L - UFL←ULB←DBL←DLF←UFL (orientation +2,+1,+2,+1), UL←BL←DL←FL←UL
+            n.cp[UFL] = temp.cp[ULB]; n.co[UFL] = (temp.co[ULB] + 2) % 3;
+            n.cp[ULB] = temp.cp[DBL]; n.co[ULB] = (temp.co[DBL] + 1) % 3;
+            n.cp[DBL] = temp.cp[DLF]; n.co[DBL] = (temp.co[DLF] + 2) % 3;
+            n.cp[DLF] = temp.cp[UFL]; n.co[DLF] = (temp.co[UFL] + 1) % 3;
+            
+            n.ep[UL] = temp.ep[BL]; n.eo[UL] = temp.eo[BL];
+            n.ep[BL] = temp.ep[DL]; n.eo[BL] = temp.eo[DL];
+            n.ep[DL] = temp.ep[FL]; n.eo[DL] = temp.eo[FL];
+            n.ep[FL] = temp.ep[UL]; n.eo[FL] = temp.eo[UL];
             break;
-        case 3: // R - Corners: URF <- UBR <- DRB <- DFR <- URF
-            cycle4(n.cp, URF, DFR, DRB, UBR);
-            {
-                int tco = n.co[URF];
-                n.co[URF] = (n.co[UBR] + 1) % 3;
-                n.co[UBR] = (n.co[DRB] + 2) % 3;
-                n.co[DRB] = (n.co[DFR] + 1) % 3;
-                n.co[DFR] = (tco + 2) % 3;
-            }
-            // Edges: UR <- BR <- DR <- FR <- UR
-            cycle4(n.ep, UR, FR, DR, BR);
-            cycle4(n.eo, UR, FR, DR, BR);
+
+        case 3: // R - URF←DFR←DRB←UBR←URF (orientation +2,+1,+2,+1), UR←FR←DR←BR←UR
+            n.cp[URF] = temp.cp[DFR]; n.co[URF] = (temp.co[DFR] + 2) % 3;
+            n.cp[DFR] = temp.cp[DRB]; n.co[DFR] = (temp.co[DRB] + 1) % 3;
+            n.cp[DRB] = temp.cp[UBR]; n.co[DRB] = (temp.co[UBR] + 2) % 3;
+            n.cp[UBR] = temp.cp[URF]; n.co[UBR] = (temp.co[URF] + 1) % 3;
+            
+            n.ep[UR] = temp.ep[FR]; n.eo[UR] = temp.eo[FR];
+            n.ep[FR] = temp.ep[DR]; n.eo[FR] = temp.eo[DR];
+            n.ep[DR] = temp.ep[BR]; n.eo[DR] = temp.eo[BR];
+            n.ep[BR] = temp.ep[UR]; n.eo[BR] = temp.eo[UR];
             break;
-        case 4: // F - Corners: URF <- DFR <- DLF <- UFL <- URF
-            cycle4(n.cp, URF, UFL, DLF, DFR);
-            {
-                int tco = n.co[URF];
-                n.co[URF] = (n.co[DFR] + 1) % 3;
-                n.co[DFR] = (n.co[DLF] + 2) % 3;
-                n.co[DLF] = (n.co[UFL] + 1) % 3;
-                n.co[UFL] = (tco + 2) % 3;
-            }
-            // Edges: UF <- FR <- DF <- FL <- UF
-            cycle4(n.ep, UF, FL, DF, FR);
-            {
-                int teo = n.eo[UF];
-                n.eo[UF] = (n.eo[FR] + 1) % 2;
-                n.eo[FR] = (n.eo[DF] + 1) % 2;
-                n.eo[DF] = (n.eo[FL] + 1) % 2;
-                n.eo[FL] = (teo + 1) % 2;
-            }
+
+        case 4: // F - URF←UFL←DLF←DFR←URF (orientation +1,+2,+1,+2), UF←FL←DF←FR←UF (flip each)
+            n.cp[URF] = temp.cp[UFL]; n.co[URF] = (temp.co[UFL] + 1) % 3;
+            n.cp[UFL] = temp.cp[DLF]; n.co[UFL] = (temp.co[DLF] + 2) % 3;
+            n.cp[DLF] = temp.cp[DFR]; n.co[DLF] = (temp.co[DFR] + 1) % 3;
+            n.cp[DFR] = temp.cp[URF]; n.co[DFR] = (temp.co[URF] + 2) % 3;
+            
+            n.ep[UF] = temp.ep[FL]; n.eo[UF] = (temp.eo[FL] + 1) % 2;
+            n.ep[FL] = temp.ep[DF]; n.eo[FL] = (temp.eo[DF] + 1) % 2;
+            n.ep[DF] = temp.ep[FR]; n.eo[DF] = (temp.eo[FR] + 1) % 2;
+            n.ep[FR] = temp.ep[UF]; n.eo[FR] = (temp.eo[UF] + 1) % 2;
             break;
-        case 5: // B - Corners: UBR <- ULB <- DBL <- DRB <- UBR
-            cycle4(n.cp, UBR, DRB, DBL, ULB);
-            {
-                int tco = n.co[UBR];
-                n.co[UBR] = (n.co[ULB] + 1) % 3;
-                n.co[ULB] = (n.co[DBL] + 2) % 3;
-                n.co[DBL] = (n.co[DRB] + 1) % 3;
-                n.co[DRB] = (tco + 2) % 3;
-            }
-            // Edges: UB <- BL <- DB <- BR <- UB
-            cycle4(n.ep, UB, BR, DB, BL);
-            {
-                int teo = n.eo[UB];
-                n.eo[UB] = (n.eo[BL] + 1) % 2;
-                n.eo[BL] = (n.eo[DB] + 1) % 2;
-                n.eo[DB] = (n.eo[BR] + 1) % 2;
-                n.eo[BR] = (teo + 1) % 2;
-            }
+
+        case 5: // B - UBR←DRB←DBL←ULB←UBR (orientation +1,+2,+1,+2), UB←BR←DB←BL←UB (flip each)
+            n.cp[UBR] = temp.cp[DRB]; n.co[UBR] = (temp.co[DRB] + 1) % 3;
+            n.cp[DRB] = temp.cp[DBL]; n.co[DRB] = (temp.co[DBL] + 2) % 3;
+            n.cp[DBL] = temp.cp[ULB]; n.co[DBL] = (temp.co[ULB] + 1) % 3;
+            n.cp[ULB] = temp.cp[UBR]; n.co[ULB] = (temp.co[UBR] + 2) % 3;
+            
+            n.ep[UB] = temp.ep[BR]; n.eo[UB] = (temp.eo[BR] + 1) % 2;
+            n.ep[BR] = temp.ep[DB]; n.eo[BR] = (temp.eo[DB] + 1) % 2;
+            n.ep[DB] = temp.ep[BL]; n.eo[DB] = (temp.eo[BL] + 1) % 2;
+            n.ep[BL] = temp.ep[UB]; n.eo[BL] = (temp.eo[UB] + 1) % 2;
             break;
         }
     }
@@ -186,8 +206,10 @@ bool is_move_allowed(Move last_move, Move curr_move) {
     int last_face = last_move / 3;
     int curr_face = curr_move / 3;
 
+    // Don't repeat same face
     if (last_face == curr_face) return false;
     
+    // Don't move opposite faces out of order (U/D, L/R, F/B)
     if (last_face / 2 == curr_face / 2) {
         if (last_face > curr_face) return false;
     }
@@ -196,18 +218,21 @@ bool is_move_allowed(Move last_move, Move curr_move) {
 }
 
 // =================================================================================================
-// --- PARITY VALIDATION (NEW) ---
+// --- PARITY VALIDATION ---
 // =================================================================================================
 
 bool validate_cube(const CubeState &c) {
+    // Check corner orientation sum
     int co_sum = 0;
     for (int i = 0; i < 8; i++) co_sum += c.co[i];
     if (co_sum % 3 != 0) return false;
     
+    // Check edge orientation sum
     int eo_sum = 0;
     for (int i = 0; i < 12; i++) eo_sum += c.eo[i];
     if (eo_sum % 2 != 0) return false;
     
+    // Count inversions
     auto count_inversions = [](const int* arr, int n) {
         int inv = 0;
         for (int i = 0; i < n; i++)
@@ -216,9 +241,11 @@ bool validate_cube(const CubeState &c) {
         return inv % 2;
     };
     
+    // Check permutation parity
     if (count_inversions(c.cp, 8) != count_inversions(c.ep, 12))
         return false;
     
+    // Check all pieces are present
     bool cp_seen[8] = {false};
     bool ep_seen[12] = {false};
     for (int i = 0; i < 8; i++) {
@@ -442,7 +469,10 @@ void gen_p1_pdb() {
         }
     }
 
-    q.push(0); slice_pdb[0] = 0;
+    // Slice coordinate: C(11,4) + C(10,3) + C(9,2) + C(8,1) = 330 + 120 + 36 + 8 = 494
+    // This represents the solved state where slice edges FR, FL, BL, BR (pieces 8-11)
+    // are in their home positions (positions 8-11 in the middle layer)
+    q.push(494); slice_pdb[494] = 0;
     while(!q.empty()){
         int u = q.front(); q.pop();
         int dist = slice_pdb[u];
@@ -561,7 +591,9 @@ bool is_solved(const CubeState &s) {
 bool parse_facelets(string f, CubeState &c) {
     if (f.size() != 54) return false;
 
+    // Parse corners
     for(int i=0; i<8; i++) {
+        // Find orientation by looking for U or D face
         int ori = -1;
         for(int o=0; o<3; o++) {
             char col = f[cornerFacelet[i][o]];
@@ -570,6 +602,7 @@ bool parse_facelets(string f, CubeState &c) {
         if(ori == -1) return false;
         c.co[i] = ori;
 
+        // Find which piece is in this position
         string colors = "";
         colors += f[cornerFacelet[i][0]];
         colors += f[cornerFacelet[i][1]];
@@ -586,6 +619,7 @@ bool parse_facelets(string f, CubeState &c) {
         if (!found) return false;
     }
 
+    // Parse edges
     for(int i=0; i<12; i++) {
         char c1 = f[edgeFacelet[i][0]];
         char c2 = f[edgeFacelet[i][1]];

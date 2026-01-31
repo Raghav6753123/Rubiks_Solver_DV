@@ -111,12 +111,25 @@ export const useCubeStore = create<CubeStore>((set, get) => ({
         return;
       }
 
+      // Handle empty solution (already solved)
+      const solution = data.solution.trim();
+      if (solution === '') {
+        set({
+          solution: [],
+          solutionString: 'Already solved!',
+          isLoading: false,
+          currentMoveIndex: -1,
+          displayFacelets: [...facelets],
+        });
+        return;
+      }
+
       // Parse solution string
-      const moves = parseSolution(data.solution);
+      const moves = parseSolution(solution);
       
       set({
         solution: moves,
-        solutionString: data.solution,
+        solutionString: solution,
         isLoading: false,
         currentMoveIndex: -1,
         displayFacelets: [...facelets],
