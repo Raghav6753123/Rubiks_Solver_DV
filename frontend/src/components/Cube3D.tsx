@@ -44,8 +44,8 @@ export default function Cube3D() {
 }
 
 // Map 54 facelets to 26 cubies (excluding center cubie)
-function mapFaceletsToCubies(facelets: string[]) {
-  const cubies = [];
+function mapFaceletsToCubies(facelets: string[]): Array<{ position: [number, number, number]; colors: string[] }> {
+  const cubies: Array<{ position: [number, number, number]; colors: string[] }> = [];
   const BLACK = '#1a1a1a';
 
   // Define cubie positions and their facelet indices
@@ -60,7 +60,7 @@ function mapFaceletsToCubies(facelets: string[]) {
     // ULB
     { pos: [-1, 1, -1] as [number, number, number], faces: [-1, 36, 0, -1, -1, 47] },
     // UBR
-    { pos: [1, 1, -1] as [number, number, number], faces: 11, -1, 2, -1, -1, 45] },
+    { pos: [1, 1, -1] as [number, number, number], faces: [11, -1, 2, -1, -1, 45] },
     // DFR
     { pos: [1, -1, 1] as [number, number, number], faces: [15, -1, -1, 29, 26, -1] },
     // DLF

@@ -1,4 +1,4 @@
-import { useCubeStore, Color } from '../store/cubeStore';
+import { useCubeStore } from '../store/cubeStore';
 import { COLOR_MAP } from '../utils/cubeUtils';
 
 export default function CubeNet() {
