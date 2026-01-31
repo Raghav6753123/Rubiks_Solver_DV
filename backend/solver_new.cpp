@@ -149,15 +149,15 @@ CubeState applyMove(const CubeState &s, Move m) {
             break;
 
         case 2: // L - UFL←ULB←DBL←DLF←UFL (orientation +2,+1,+2,+1), UL←BL←DL←FL←UL
-            n.cp[UFL] = temp.cp[ULB]; n.co[UFL] = (temp.co[ULB] + 2) % 3;
-            n.cp[ULB] = temp.cp[DBL]; n.co[ULB] = (temp.co[DBL] + 1) % 3;
-            n.cp[DBL] = temp.cp[DLF]; n.co[DBL] = (temp.co[DLF] + 2) % 3;
-            n.cp[DLF] = temp.cp[UFL]; n.co[DLF] = (temp.co[UFL] + 1) % 3;
+            n.cp[UFL] = temp.cp[DLF]; n.co[UFL] = (temp.co[DLF] + 2) % 3;
+            n.cp[DLF] = temp.cp[DBL]; n.co[DLF] = (temp.co[DBL] + 1) % 3;
+            n.cp[DBL] = temp.cp[ULB]; n.co[DBL] = (temp.co[ULB] + 2) % 3;
+            n.cp[ULB] = temp.cp[UFL]; n.co[ULB] = (temp.co[UFL] + 1) % 3;
             
-            n.ep[UL] = temp.ep[BL]; n.eo[UL] = temp.eo[BL];
-            n.ep[BL] = temp.ep[DL]; n.eo[BL] = temp.eo[DL];
-            n.ep[DL] = temp.ep[FL]; n.eo[DL] = temp.eo[FL];
-            n.ep[FL] = temp.ep[UL]; n.eo[FL] = temp.eo[UL];
+            n.ep[UL] = temp.ep[FL]; n.eo[UL] = temp.eo[FL];
+            n.ep[FL] = temp.ep[DL]; n.eo[FL] = temp.eo[DL];
+            n.ep[DL] = temp.ep[BL]; n.eo[DL] = temp.eo[BL];
+            n.ep[BL] = temp.ep[UL]; n.eo[BL] = temp.eo[UL];
             break;
 
         case 3: // R - URF←DFR←DRB←UBR←URF (orientation +2,+1,+2,+1), UR←FR←DR←BR←UR
@@ -173,27 +173,27 @@ CubeState applyMove(const CubeState &s, Move m) {
             break;
 
         case 4: // F - URF←UFL←DLF←DFR←URF (orientation +1,+2,+1,+2), UF←FL←DF←FR←UF (flip each)
-            n.cp[URF] = temp.cp[UFL]; n.co[URF] = (temp.co[UFL] + 1) % 3;
-            n.cp[UFL] = temp.cp[DLF]; n.co[UFL] = (temp.co[DLF] + 2) % 3;
-            n.cp[DLF] = temp.cp[DFR]; n.co[DLF] = (temp.co[DFR] + 1) % 3;
-            n.cp[DFR] = temp.cp[URF]; n.co[DFR] = (temp.co[URF] + 2) % 3;
+            n.cp[URF] = temp.cp[DFR]; n.co[URF] = (temp.co[DFR] + 2) % 3;
+            n.cp[DFR] = temp.cp[DLF]; n.co[DFR] = (temp.co[DLF] + 1) % 3;
+            n.cp[DLF] = temp.cp[UFL]; n.co[DLF] = (temp.co[UFL] + 2) % 3;
+            n.cp[UFL] = temp.cp[URF]; n.co[UFL] = (temp.co[URF] + 1) % 3;
             
-            n.ep[UF] = temp.ep[FL]; n.eo[UF] = (temp.eo[FL] + 1) % 2;
-            n.ep[FL] = temp.ep[DF]; n.eo[FL] = (temp.eo[DF] + 1) % 2;
-            n.ep[DF] = temp.ep[FR]; n.eo[DF] = (temp.eo[FR] + 1) % 2;
-            n.ep[FR] = temp.ep[UF]; n.eo[FR] = (temp.eo[UF] + 1) % 2;
+            n.ep[UF] = temp.ep[FR]; n.eo[UF] = (temp.eo[FR] + 1) % 2;
+            n.ep[FR] = temp.ep[DF]; n.eo[FR] = (temp.eo[DF] + 1) % 2;
+            n.ep[DF] = temp.ep[FL]; n.eo[DF] = (temp.eo[FL] + 1) % 2;
+            n.ep[FL] = temp.ep[UF]; n.eo[FL] = (temp.eo[UF] + 1) % 2;
             break;
 
         case 5: // B - UBR←DRB←DBL←ULB←UBR (orientation +1,+2,+1,+2), UB←BR←DB←BL←UB (flip each)
-            n.cp[UBR] = temp.cp[DRB]; n.co[UBR] = (temp.co[DRB] + 1) % 3;
-            n.cp[DRB] = temp.cp[DBL]; n.co[DRB] = (temp.co[DBL] + 2) % 3;
-            n.cp[DBL] = temp.cp[ULB]; n.co[DBL] = (temp.co[ULB] + 1) % 3;
-            n.cp[ULB] = temp.cp[UBR]; n.co[ULB] = (temp.co[UBR] + 2) % 3;
+            n.cp[UBR] = temp.cp[ULB]; n.co[UBR] = (temp.co[ULB] + 1) % 3;
+            n.cp[ULB] = temp.cp[DBL]; n.co[ULB] = (temp.co[DBL] + 2) % 3;
+            n.cp[DBL] = temp.cp[DRB]; n.co[DBL] = (temp.co[DRB] + 1) % 3;
+            n.cp[DRB] = temp.cp[UBR]; n.co[DRB] = (temp.co[UBR] + 2) % 3;
             
-            n.ep[UB] = temp.ep[BR]; n.eo[UB] = (temp.eo[BR] + 1) % 2;
-            n.ep[BR] = temp.ep[DB]; n.eo[BR] = (temp.eo[DB] + 1) % 2;
-            n.ep[DB] = temp.ep[BL]; n.eo[DB] = (temp.eo[BL] + 1) % 2;
-            n.ep[BL] = temp.ep[UB]; n.eo[BL] = (temp.eo[UB] + 1) % 2;
+            n.ep[UB] = temp.ep[BL]; n.eo[UB] = (temp.eo[BL] + 1) % 2;
+            n.ep[BL] = temp.ep[DB]; n.eo[BL] = (temp.eo[DB] + 1) % 2;
+            n.ep[DB] = temp.ep[BR]; n.eo[DB] = (temp.eo[BR] + 1) % 2;
+            n.ep[BR] = temp.ep[UB]; n.eo[BR] = (temp.eo[UB] + 1) % 2;
             break;
         }
     }
@@ -469,7 +469,7 @@ void gen_p1_pdb() {
         }
     }
 
-    q.push(494); slice_pdb[494] = 0;
+    q.push(0); slice_pdb[0] = 0;
     while(!q.empty()){
         int u = q.front(); q.pop();
         int dist = slice_pdb[u];
