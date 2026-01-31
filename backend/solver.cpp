@@ -469,6 +469,9 @@ void gen_p1_pdb() {
         }
     }
 
+    // Slice coordinate: C(11,4) + C(10,3) + C(9,2) + C(8,1) = 330 + 120 + 36 + 8 = 494
+    // This represents the solved state where slice edges FR, FL, BL, BR (pieces 8-11)
+    // are in their home positions (positions 8-11 in the middle layer)
     q.push(494); slice_pdb[494] = 0;
     while(!q.empty()){
         int u = q.front(); q.pop();
