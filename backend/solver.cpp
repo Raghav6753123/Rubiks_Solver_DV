@@ -40,8 +40,8 @@ int cornerFacelet[8][3] = {
 
 int edgeFacelet[12][2] = {
     {5, 10}, {7, 19}, {3, 37}, {1, 46},
-    {32, 14}, {28, 25}, {30, 43}, {34, 52},
-    {23, 12}, {21, 41}, {50, 39}, {48, 16}
+    {32, 16}, {28, 25}, {30, 43}, {34, 52},
+    {23, 12}, {21, 41}, {50, 39}, {48, 14}
 };
 
 char cornerColor[8][3] = {
@@ -97,19 +97,21 @@ CubeState applyMove(const CubeState &s, Move m) {
 
     for (int k = 0; k < power; k++) {
         switch (axis) {
-        case 0: // U
-            cycle4(n.cp, URF, UFL, ULB, UBR);
-            cycle4(n.co, URF, UFL, ULB, UBR);
-            cycle4(n.ep, UR, UF, UL, UB);
-            cycle4(n.eo, UR, UF, UL, UB);
+        case 0: // U - Corners: URF -> UBR -> ULB -> UFL -> URF
+            cycle4(n.cp, URF, UBR, ULB, UFL);
+            cycle4(n.co, URF, UBR, ULB, UFL);
+            // Edges: UR -> UB -> UL -> UF -> UR
+            cycle4(n.ep, UR, UB, UL, UF);
+            cycle4(n.eo, UR, UB, UL, UF);
             break;
-        case 1: // D
-            cycle4(n.cp, DFR, DRB, DBL, DLF);
-            cycle4(n.co, DFR, DRB, DBL, DLF);
-            cycle4(n.ep, DR, DB, DL, DF);
-            cycle4(n.eo, DR, DB, DL, DF);
+        case 1: // D - Corners: DFR -> DLF -> DBL -> DRB -> DFR
+            cycle4(n.cp, DFR, DLF, DBL, DRB);
+            cycle4(n.co, DFR, DLF, DBL, DRB);
+            // Edges: DR -> DF -> DL -> DB -> DR
+            cycle4(n.ep, DR, DF, DL, DB);
+            cycle4(n.eo, DR, DF, DL, DB);
             break;
-        case 2: // L - FIXED
+        case 2: // L - Corners: UFL <- DLF <- DBL <- ULB <- UFL
             cycle4(n.cp, UFL, ULB, DBL, DLF);
             {
                 int tco = n.co[UFL];
@@ -118,10 +120,11 @@ CubeState applyMove(const CubeState &s, Move m) {
                 n.co[DBL] = (n.co[ULB] + 1) % 3;
                 n.co[ULB] = (tco + 2) % 3;
             }
+            // Edges: UL <- FL <- DL <- BL <- UL
             cycle4(n.ep, UL, BL, DL, FL);
             cycle4(n.eo, UL, BL, DL, FL);
             break;
-        case 3: // R
+        case 3: // R - Corners: URF <- UBR <- DRB <- DFR <- URF
             cycle4(n.cp, URF, DFR, DRB, UBR);
             {
                 int tco = n.co[URF];
@@ -130,10 +133,11 @@ CubeState applyMove(const CubeState &s, Move m) {
                 n.co[DRB] = (n.co[DFR] + 1) % 3;
                 n.co[DFR] = (tco + 2) % 3;
             }
+            // Edges: UR <- BR <- DR <- FR <- UR
             cycle4(n.ep, UR, FR, DR, BR);
             cycle4(n.eo, UR, FR, DR, BR);
             break;
-        case 4: // F
+        case 4: // F - Corners: URF <- DFR <- DLF <- UFL <- URF
             cycle4(n.cp, URF, UFL, DLF, DFR);
             {
                 int tco = n.co[URF];
@@ -142,6 +146,7 @@ CubeState applyMove(const CubeState &s, Move m) {
                 n.co[DLF] = (n.co[UFL] + 1) % 3;
                 n.co[UFL] = (tco + 2) % 3;
             }
+            // Edges: UF <- FR <- DF <- FL <- UF
             cycle4(n.ep, UF, FL, DF, FR);
             {
                 int teo = n.eo[UF];
@@ -151,7 +156,7 @@ CubeState applyMove(const CubeState &s, Move m) {
                 n.eo[FL] = (teo + 1) % 2;
             }
             break;
-        case 5: // B
+        case 5: // B - Corners: UBR <- ULB <- DBL <- DRB <- UBR
             cycle4(n.cp, UBR, DRB, DBL, ULB);
             {
                 int tco = n.co[UBR];
@@ -160,6 +165,7 @@ CubeState applyMove(const CubeState &s, Move m) {
                 n.co[DBL] = (n.co[DRB] + 1) % 3;
                 n.co[DRB] = (tco + 2) % 3;
             }
+            // Edges: UB <- BL <- DB <- BR <- UB
             cycle4(n.ep, UB, BR, DB, BL);
             {
                 int teo = n.eo[UB];
@@ -535,6 +541,20 @@ bool solve_p2(CubeState s, int g, int threshold, vector<Move>& path, Move lastMo
 }
 
 // =================================================================================================
+// --- SOLVED STATE CHECK ---
+// =================================================================================================
+
+bool is_solved(const CubeState &s) {
+    for (int i = 0; i < 8; i++) {
+        if (s.cp[i] != i || s.co[i] != 0) return false;
+    }
+    for (int i = 0; i < 12; i++) {
+        if (s.ep[i] != i || s.eo[i] != 0) return false;
+    }
+    return true;
+}
+
+// =================================================================================================
 // --- PARSING ---
 // =================================================================================================
 
@@ -636,6 +656,11 @@ string solve(const string& facelet_string) {
     
     if (!validate_cube(start_state)) {
         return "ERROR: Impossible cube state";
+    }
+
+    // Check if already solved
+    if (is_solved(start_state)) {
+        return "";  // Empty solution for solved cube
     }
 
     vector<Move> p1_sol;

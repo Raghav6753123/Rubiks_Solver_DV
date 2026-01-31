@@ -22,6 +22,14 @@ Makefile
 solver
 *.dylib
 
+# Test files
+backend/solver_test
+backend/apply_r*
+backend/test_*
+backend/generate_*
+backend/verify_*
+backend/*.txt
+
 # Pattern Databases
 backend/pdb/*.pdb
 
