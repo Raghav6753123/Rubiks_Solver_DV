@@ -28,7 +28,14 @@ class SolveResponse(BaseModel):
 
 @app.get("/api/health")
 async def health_check():
-    """Health check endpoint"""
+    """
+    Health check endpoint to verify the API server is running.
+    
+    Returns:
+        dict: Status information including solver type
+            - status: "healthy" if server is operational
+            - solver: Name of the solving algorithm ("kociemba")
+    """
     return {"status": "healthy", "solver": "kociemba"}
 
 @app.post("/api/solve", response_model=SolveResponse)
@@ -91,8 +98,9 @@ async def solve_cube(request: SolveRequest):
             success=True
         )
             
-    except ValueError:
-        # kociemba raises ValueError for impossible cube states
+    except ValueError as e:
+        # kociemba raises ValueError for impossible cube states (parity errors, etc.)
+        # We return a user-friendly error message without exposing internal details
         return SolveResponse(
             success=False,
             error="Invalid cube: impossible configuration (check corner/edge parity)"

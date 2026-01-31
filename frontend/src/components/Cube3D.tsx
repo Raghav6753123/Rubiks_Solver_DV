@@ -46,6 +46,7 @@ const getFaceletPosition = (index: number): [number, number, number, string] => 
 const Facelet: React.FC<{ index: number; color: string }> = ({ index, color }) => {
   const [x, y, z, normal] = getFaceletPosition(index);
   
+  // Rotation is constant for each facelet's normal orientation
   const rotation = useMemo(() => {
     switch (normal) {
       case 'up': return [0, 0, 0];
