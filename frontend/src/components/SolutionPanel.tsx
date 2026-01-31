@@ -32,26 +32,34 @@ export default function SolutionPanel() {
         </div>
       )}
 
-      {hasSolution && !error && (
+      {solutionString && !error && (
         <div className="solution-display">
-          <div className="solution-stats">
-            <span>Moves: {solution.length}</span>
-          </div>
-          
-          <div className="solution-moves">
-            {solution.map((move, index) => (
-              <span
-                key={index}
-                className={`move ${index === currentMoveIndex ? 'current' : ''} ${index < currentMoveIndex ? 'done' : ''}`}
-              >
-                {move.notation}
-              </span>
-            ))}
-          </div>
-          
-          <div className="solution-text">
-            <strong>Solution:</strong> {solutionString}
-          </div>
+          {hasSolution ? (
+            <>
+              <div className="solution-stats">
+                <span>Moves: {solution.length}</span>
+              </div>
+              
+              <div className="solution-moves">
+                {solution.map((move, index) => (
+                  <span
+                    key={index}
+                    className={`move ${index === currentMoveIndex ? 'current' : ''} ${index < currentMoveIndex ? 'done' : ''}`}
+                  >
+                    {move.notation}
+                  </span>
+                ))}
+              </div>
+              
+              <div className="solution-text">
+                <strong>Solution:</strong> {solutionString}
+              </div>
+            </>
+          ) : (
+            <div className="solution-text">
+              <strong>✅ {solutionString}</strong>
+            </div>
+          )}
         </div>
       )}
     </div>
