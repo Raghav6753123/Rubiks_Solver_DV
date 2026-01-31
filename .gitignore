@@ -1,0 +1,52 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+venv/
+env/
+.env
+
+# C++ Build
+*.o
+*.a
+*.out
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+solver
+*.dylib
+
+# Pattern Databases
+backend/pdb/*.pdb
+
+# Node
+node_modules/
+.pnpm-store/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build outputs
+frontend/dist/
+frontend/build/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+/tmp/
