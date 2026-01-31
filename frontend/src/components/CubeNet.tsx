@@ -1,63 +1,70 @@
-import { useCubeStore } from '../store/cubeStore';
-import { COLOR_MAP } from '../utils/cubeUtils';
+import React from 'react';
+import { useCubeStore, FACE_COLORS } from '../store/cubeStore';
+import { FACELET_LAYOUT } from '../utils/cubeUtils';
 
-export default function CubeNet() {
-  const { displayFacelets, selectedColor, setFacelet } = useCubeStore();
-
-  const handleFaceletClick = (index: number) => {
-    // Don't allow changing center facelets
-    const centers = [4, 13, 22, 31, 40, 49];
-    if (centers.includes(index)) return;
-    
-    setFacelet(index, selectedColor);
-  };
-
-  const renderFace = (startIndex: number, label: string) => {
-    const facelets = [];
-    for (let i = 0; i < 9; i++) {
-      const index = startIndex + i;
-      const color = displayFacelets[index];
-      const isCenter = i === 4;
-      
-      facelets.push(
-        <button
-          key={index}
-          className={`facelet ${isCenter ? 'center' : ''}`}
-          style={{ backgroundColor: COLOR_MAP[color] }}
-          onClick={() => handleFaceletClick(index)}
-          disabled={isCenter}
-        />
-      );
-    }
+export const CubeNet: React.FC = () => {
+  const { facelets, selectedColor, setFacelet } = useCubeStore();
+  
+  const renderFace = (faceKey: string, offsetX: number, offsetY: number) => {
+    const faceIndices = FACELET_LAYOUT[faceKey as keyof typeof FACELET_LAYOUT];
     
     return (
-      <div className="face">
-        <div className="face-label">{label}</div>
-        <div className="facelet-grid">{facelets}</div>
-      </div>
+      <g key={faceKey}>
+        {faceIndices.map((faceletIndex, i) => {
+          const row = Math.floor(i / 3);
+          const col = i % 3;
+          const x = offsetX + col * 30;
+          const y = offsetY + row * 30;
+          const color = FACE_COLORS[facelets[faceletIndex]];
+          
+          return (
+            <rect
+              key={faceletIndex}
+              x={x}
+              y={y}
+              width={28}
+              height={28}
+              fill={color}
+              stroke="#333"
+              strokeWidth="2"
+              style={{ cursor: 'pointer' }}
+              onClick={() => setFacelet(faceletIndex, selectedColor)}
+            />
+          );
+        })}
+        {/* Face label */}
+        <text
+          x={offsetX + 45}
+          y={offsetY + 50}
+          fontSize="20"
+          fontWeight="bold"
+          fill="#666"
+          textAnchor="middle"
+          pointerEvents="none"
+        >
+          {faceKey}
+        </text>
+      </g>
     );
   };
-
+  
   return (
-    <div className="cube-net">
-      <div className="net-row">
-        <div className="face-spacer"></div>
-        {renderFace(0, 'U')}
-        <div className="face-spacer"></div>
-        <div className="face-spacer"></div>
-      </div>
-      <div className="net-row">
-        {renderFace(36, 'L')}
-        {renderFace(18, 'F')}
-        {renderFace(9, 'R')}
-        {renderFace(45, 'B')}
-      </div>
-      <div className="net-row">
-        <div className="face-spacer"></div>
-        {renderFace(27, 'D')}
-        <div className="face-spacer"></div>
-        <div className="face-spacer"></div>
-      </div>
+    <div style={{
+      backgroundColor: '#fff',
+      borderRadius: '8px',
+      padding: '16px',
+      marginBottom: '16px',
+    }}>
+      <h3 style={{ marginTop: 0 }}>Cube Input (2D Net)</h3>
+      <svg width="390" height="300" style={{ display: 'block', margin: '0 auto' }}>
+        {/* Layout: U on top, then L F R B in middle row, D on bottom */}
+        {renderFace('U', 105, 10)}
+        {renderFace('L', 10, 100)}
+        {renderFace('F', 105, 100)}
+        {renderFace('R', 200, 100)}
+        {renderFace('B', 295, 100)}
+        {renderFace('D', 105, 190)}
+      </svg>
     </div>
   );
-}
+};

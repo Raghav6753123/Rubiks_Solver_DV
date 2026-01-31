@@ -1,9 +1,6 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-import subprocess
-import os
-import sys
 import kociemba
 
 app = FastAPI(title="Rubik's Cube Solver API")
@@ -31,20 +28,30 @@ class SolveResponse(BaseModel):
 
 @app.get("/api/health")
 async def health_check():
-    return {"status": "healthy", "solver": "kociemba-python"}
+    """Health check endpoint"""
+    return {"status": "healthy", "solver": "kociemba"}
 
 @app.post("/api/solve", response_model=SolveResponse)
 async def solve_cube(request: SolveRequest):
+    """
+    Solve a Rubik's Cube from a facelet string.
+    
+    Args:
+        request: SolveRequest with facelets string (54 chars, URFDLB format)
+    
+    Returns:
+        SolveResponse with solution moves or error
+    """
     facelets = request.facelets.strip()
     
-    # Validate input
+    # Validate length
     if len(facelets) != 54:
         return SolveResponse(
             success=False,
             error="Invalid input: must be exactly 54 characters"
         )
     
-    # Check that we have the right number of each color
+    # Validate characters
     valid_colors = set("URFDLB")
     if not all(c in valid_colors for c in facelets):
         return SolveResponse(
@@ -52,7 +59,7 @@ async def solve_cube(request: SolveRequest):
             error="Invalid input: only U, R, F, D, L, B characters allowed"
         )
     
-    # Check color counts (each color should appear 9 times)
+    # Validate color counts (each color should appear exactly 9 times)
     color_counts = {}
     for c in facelets:
         color_counts[c] = color_counts.get(c, 0) + 1
@@ -63,16 +70,17 @@ async def solve_cube(request: SolveRequest):
             error="Invalid input: each color must appear exactly 9 times"
         )
     
+    # Check if already solved
+    if facelets == SOLVED_CUBE:
+        return SolveResponse(
+            solution="",
+            move_count=0,
+            success=True
+        )
+    
     # Use kociemba library to solve
     try:
-        # kociemba.solve() returns solution string or raises ValueError for invalid cubes
         solution = kociemba.solve(facelets)
-        
-        # kociemba library may return a non-empty solution for already-solved cubes
-        # We explicitly check and return empty string for the solved state
-        is_already_solved = facelets == SOLVED_CUBE
-        if is_already_solved:
-            solution = ""
         
         # Count moves
         moves = solution.split() if solution else []
@@ -83,7 +91,7 @@ async def solve_cube(request: SolveRequest):
             success=True
         )
             
-    except ValueError as e:
+    except ValueError:
         # kociemba raises ValueError for impossible cube states
         return SolveResponse(
             success=False,

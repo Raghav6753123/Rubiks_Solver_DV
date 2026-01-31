@@ -1,205 +1,152 @@
 import { create } from 'zustand';
-import { applyMoveToFacelets } from '../utils/cubeUtils';
 
-export type Color = 'U' | 'R' | 'F' | 'D' | 'L' | 'B';
+// Color mapping for each face
+export const FACE_COLORS: Record<string, string> = {
+  U: '#FFFFFF', // White
+  R: '#FF0000', // Red
+  F: '#00FF00', // Green
+  D: '#FFFF00', // Yellow
+  L: '#FFA500', // Orange
+  B: '#0000FF', // Blue
+};
 
-export interface Move {
-  notation: string;
-  face: string;
-  turns: number;
-}
+// Solved cube state
+export const SOLVED_CUBE = 'UUUUUUUUURRRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBB';
 
-interface CubeStore {
-  // Initial cube state (54 facelets)
-  facelets: string[];
-  
-  // Display facelets (with moves applied)
-  displayFacelets: string[];
+export interface CubeState {
+  // Cube state (54 facelets)
+  facelets: string;
   
   // Selected color for painting
-  selectedColor: Color;
+  selectedColor: string;
   
-  // Solution state
-  solution: Move[];
+  // Solution
+  solution: string[];
   solutionString: string;
-  isLoading: boolean;
-  error: string | null;
+  moveCount: number;
   
-  // Playback state
+  // Playback
   currentMoveIndex: number;
   isPlaying: boolean;
-  playbackSpeed: number; // milliseconds per move
+  playbackSpeed: number;
+  
+  // UI state
+  isSolving: boolean;
+  error: string;
   
   // Actions
-  setFacelet: (index: number, color: Color) => void;
-  setSelectedColor: (color: Color) => void;
+  setFacelet: (index: number, color: string) => void;
+  setSelectedColor: (color: string) => void;
   resetCube: () => void;
   solveCube: () => Promise<void>;
-  setCurrentMove: (index: number) => void;
+  setCurrentMoveIndex: (index: number) => void;
+  setIsPlaying: (playing: boolean) => void;
+  setPlaybackSpeed: (speed: number) => void;
   nextMove: () => void;
   prevMove: () => void;
-  togglePlayback: () => void;
-  setPlaybackSpeed: (speed: number) => void;
-  resetPlayback: () => void;
 }
 
-// Solved cube state (URFDLB order)
-const SOLVED_STATE = 
-  'UUUUUUUUU' + // U face (white)
-  'RRRRRRRRR' + // R face (red)
-  'FFFFFFFFF' + // F face (green)
-  'DDDDDDDDD' + // D face (yellow)
-  'LLLLLLLLL' + // L face (orange)
-  'BBBBBBBBB';  // B face (blue)
-
-export const useCubeStore = create<CubeStore>((set, get) => ({
-  facelets: SOLVED_STATE.split(''),
-  displayFacelets: SOLVED_STATE.split(''),
+export const useCubeStore = create<CubeState>((set, get) => ({
+  // Initial state
+  facelets: SOLVED_CUBE,
   selectedColor: 'U',
   solution: [],
   solutionString: '',
-  isLoading: false,
-  error: null,
-  currentMoveIndex: -1,
+  moveCount: 0,
+  currentMoveIndex: 0,
   isPlaying: false,
-  playbackSpeed: 500,
-
-  setFacelet: (index: number, color: Color) => {
-    const newFacelets = [...get().facelets];
-    newFacelets[index] = color;
+  playbackSpeed: 1,
+  isSolving: false,
+  error: '',
+  
+  // Set a facelet color
+  setFacelet: (index: number, color: string) => {
+    const facelets = get().facelets.split('');
+    facelets[index] = color;
     set({ 
-      facelets: newFacelets,
-      displayFacelets: newFacelets,
+      facelets: facelets.join(''),
       solution: [],
       solutionString: '',
-      currentMoveIndex: -1,
-      error: null,
+      moveCount: 0,
+      currentMoveIndex: 0,
+      error: '',
     });
   },
-
-  setSelectedColor: (color: Color) => {
-    set({ selectedColor: color });
-  },
-
-  resetCube: () => {
-    set({
-      facelets: SOLVED_STATE.split(''),
-      displayFacelets: SOLVED_STATE.split(''),
-      solution: [],
-      solutionString: '',
-      currentMoveIndex: -1,
-      isPlaying: false,
-      error: null,
-    });
-  },
-
+  
+  // Set selected color
+  setSelectedColor: (color: string) => set({ selectedColor: color }),
+  
+  // Reset to solved state
+  resetCube: () => set({
+    facelets: SOLVED_CUBE,
+    solution: [],
+    solutionString: '',
+    moveCount: 0,
+    currentMoveIndex: 0,
+    error: '',
+    isPlaying: false,
+  }),
+  
+  // Solve the cube
   solveCube: async () => {
     const { facelets } = get();
-    set({ isLoading: true, error: null });
-
+    set({ isSolving: true, error: '' });
+    
     try {
-      const response = await fetch('http://localhost:8000/api/solve', {
+      const response = await fetch('/api/solve', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ facelets: facelets.join('') }),
+        body: JSON.stringify({ facelets }),
       });
-
-      const data = await response.json();
-
-      if (!data.success) {
-        set({ error: data.error || 'Failed to solve cube', isLoading: false });
-        return;
-      }
-
-      // Handle empty solution (already solved)
-      const solution = data.solution.trim();
-      if (solution === '') {
-        set({
-          solution: [],
-          solutionString: 'Already solved!',
-          isLoading: false,
-          currentMoveIndex: -1,
-          displayFacelets: [...facelets],
-        });
-        return;
-      }
-
-      // Parse solution string
-      const moves = parseSolution(solution);
       
+      const data = await response.json();
+      
+      if (data.success) {
+        const moves = data.solution ? data.solution.split(' ') : [];
+        set({
+          solution: moves,
+          solutionString: data.solution || 'Already solved!',
+          moveCount: data.move_count,
+          currentMoveIndex: 0,
+          isSolving: false,
+          error: '',
+        });
+      } else {
+        set({
+          error: data.error,
+          solution: [],
+          solutionString: '',
+          moveCount: 0,
+          isSolving: false,
+        });
+      }
+    } catch (error) {
       set({
-        solution: moves,
-        solutionString: solution,
-        isLoading: false,
-        currentMoveIndex: -1,
-        displayFacelets: [...facelets],
-      });
-    } catch (err) {
-      set({ 
-        error: err instanceof Error ? err.message : 'Network error',
-        isLoading: false 
+        error: 'Failed to connect to solver',
+        solution: [],
+        solutionString: '',
+        moveCount: 0,
+        isSolving: false,
       });
     }
   },
-
-  setCurrentMove: (index: number) => {
-    const { facelets, solution } = get();
-    const clampedIndex = Math.max(-1, Math.min(index, solution.length - 1));
-    
-    // Apply moves up to the current index
-    let displayFacelets = [...facelets];
-    for (let i = 0; i <= clampedIndex; i++) {
-      displayFacelets = applyMoveToFacelets(displayFacelets, solution[i].notation);
-    }
-    
-    set({ currentMoveIndex: clampedIndex, displayFacelets });
-  },
-
+  
+  // Playback controls
+  setCurrentMoveIndex: (index: number) => set({ currentMoveIndex: index }),
+  setIsPlaying: (playing: boolean) => set({ isPlaying: playing }),
+  setPlaybackSpeed: (speed: number) => set({ playbackSpeed: speed }),
+  
   nextMove: () => {
     const { currentMoveIndex, solution } = get();
-    if (currentMoveIndex < solution.length - 1) {
-      get().setCurrentMove(currentMoveIndex + 1);
+    if (currentMoveIndex < solution.length) {
+      set({ currentMoveIndex: currentMoveIndex + 1 });
     }
   },
-
+  
   prevMove: () => {
     const { currentMoveIndex } = get();
-    if (currentMoveIndex >= 0) {
-      get().setCurrentMove(currentMoveIndex - 1);
+    if (currentMoveIndex > 0) {
+      set({ currentMoveIndex: currentMoveIndex - 1 });
     }
   },
-
-  togglePlayback: () => {
-    const { isPlaying } = get();
-    set({ isPlaying: !isPlaying });
-  },
-
-  setPlaybackSpeed: (speed: number) => {
-    set({ playbackSpeed: speed });
-  },
-
-  resetPlayback: () => {
-    const { facelets } = get();
-    set({ 
-      currentMoveIndex: -1, 
-      isPlaying: false,
-      displayFacelets: [...facelets],
-    });
-  },
 }));
-
-// Helper function to parse solution string
-function parseSolution(solutionStr: string): Move[] {
-  if (!solutionStr) return [];
-  
-  return solutionStr.split(' ').map(notation => {
-    const face = notation[0];
-    const modifier = notation.slice(1);
-    let turns = 1;
-    
-    if (modifier === '2') turns = 2;
-    else if (modifier === "'") turns = 3;
-    
-    return { notation, face, turns };
-  });
-}
